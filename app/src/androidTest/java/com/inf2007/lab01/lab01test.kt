@@ -1,113 +1,96 @@
 package com.inf2007.lab01
 
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import com.inf2007.lab01.ui.theme.Lab01Theme
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextClearance
+import androidx.compose.ui.test.performTextInput
+import org.junit.Rule
+import org.junit.Test
 
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
+class lab01test {
+    @get:Rule
+    val composeTestRule = createComposeRule()
+
+    @Test
+    fun mainScreenTest() {
+        composeTestRule.setContent {
             MainScreen()
         }
+
+        // Verify that the TextField exists
+        composeTestRule.onNodeWithTag("nameInput").assertIsDisplayed()
+
+        // Verify that the Submit button exists
+        composeTestRule.onNodeWithTag("submitButton").assertIsDisplayed()
+
+        // Initially, the greeting message should not exist
+        composeTestRule.onNodeWithTag("greetingMsg").assertDoesNotExist()
     }
-}
 
-@Composable
-fun MainScreen() {
-    Lab01Theme {
-        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-            var username by remember { mutableStateOf("") }
-            var showGreeting by remember { mutableStateOf(false) }
-
-            Column(
-                modifier = Modifier
-                    .padding(innerPadding)
-                    .fillMaxSize()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                UserInput(
-                    name = username,
-                    onNameChange = { username = it }
-                )
-
-                Button(
-                    onClick = {
-                        if (username.isNotBlank()) {
-                            showGreeting = true
-                        }
-                        else{
-                            showGreeting=false
-                        }
-
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("submitButton")
-                ) {
-                    Text("Submit")
-                }
-
-                if (showGreeting) {
-                    Greeting(
-                        name = username,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 16.dp)
-                    )
-
-                }
-            }
+    @Test
+    fun testGreetingAppearsOnSubmit() {
+        composeTestRule.setContent {
+            MainScreen()
         }
+
+        // Enter a name into the TextField
+        composeTestRule.onNodeWithTag("nameInput")
+            .performTextInput("John")
+
+        // Click the Submit button
+        composeTestRule.onNodeWithTag("submitButton")
+            .performClick()
+
+        // Verify the greeting message is displayed with the correct text
+        composeTestRule.onNodeWithTag("greetingMsg")
+            .assertIsDisplayed()
+            .assertTextEquals("Hello John!, Welcome to INF2007!")
     }
-}
 
-@Composable
-fun UserInput(name: String, onNameChange: (String) -> Unit, modifier: Modifier = Modifier) {
-    TextField(
-        value = name,
-        onValueChange = { onNameChange(it) },
-        label = { Text("Enter your Name") },
-        modifier = modifier
-            .fillMaxWidth()
-            .testTag("nameInput")
-    )
-}
+    @Test
+    fun testGreetingDoesNotAppearForBlankInput() {
+        composeTestRule.setContent {
+            MainScreen()
+        }
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!, Welcome to InF2007!",
-        modifier = Modifier
-            .fillMaxWidth()
-            .testTag("greetingMsg")
-    )
-}
+        // Click the Submit button without entering a name
+        composeTestRule.onNodeWithTag("submitButton")
+            .performClick()
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    MainScreen()
+        // Verify the greeting message does not exist
+        composeTestRule.onNodeWithTag("greetingMsg").assertDoesNotExist()
+    }
+
+    @Test
+    fun testGreetingUpdatesWithNewInput() {
+        composeTestRule.setContent {
+            MainScreen()
+        }
+
+        // Enter the first name and click Submit
+        composeTestRule.onNodeWithTag("nameInput")
+            .performTextInput("Alice")
+        composeTestRule.onNodeWithTag("submitButton")
+            .performClick()
+
+        // Verify the greeting for "Alice"
+        composeTestRule.onNodeWithTag("greetingMsg")
+            .assertTextEquals("Hello Alice!, Welcome to INF2007!")
+
+        // Enter a new name and click Submit
+        composeTestRule.onNodeWithTag("nameInput")
+            .performTextClearance()
+        composeTestRule.onNodeWithTag("nameInput")
+            .performTextInput("Bob")
+        composeTestRule.onNodeWithTag("submitButton")
+            .performClick()
+
+        // Verify the greeting for "Bob"
+        composeTestRule.onNodeWithTag("greetingMsg")
+            .assertTextEquals("Hello Bob!, Welcome to INF2007!")
+    }
 }
